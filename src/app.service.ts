@@ -8,11 +8,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import Web3 from 'web3';
+import axios from 'axios';
 
 @Injectable()
 export class AppService {
   private readonly web3: Web3;
-  private readonly whitelist: string[];
+  private whitelist: string[];
   private readonly contractAddress: string;
   private readonly privateKey: string;
 
@@ -24,9 +25,27 @@ export class AppService {
     this.web3 = new Web3();
     this.contractAddress = this.configService.get('contractAddress');
     this.privateKey = this.configService.get('pk');
-    this.whitelist = this.configService
-      .get('whitelist')
-      .map((addr) => addr.toLowerCase());
+  }
+
+  async onModuleInit() {
+    try {
+      this.whitelist = await axios
+        .get('https://dweb.link/ipfs/' + this.configService.get('cid'))
+        .then((res) =>
+          (res.data as string).split(',').map((addr) => addr.toLowerCase()),
+        );
+    } catch (err) {
+      this.logger.error(err.message, err.stack, AppService.name);
+    }
+  }
+
+  async getWhitelist(): Promise<any | InternalServerErrorException> {
+    return {
+      count: this.whitelist.length,
+      list: this.whitelist.map(
+        (addr) => addr.substr(0, 6) + '...' + addr.substring(38),
+      ),
+    };
   }
 
   async getSignature(
@@ -34,7 +53,8 @@ export class AppService {
   ): Promise<any | InternalServerErrorException | ForbiddenException> {
     try {
       const { address } = payload;
-      if (this.whitelist.includes(address.toLowerCase()))
+
+      if (!this.whitelist.includes(address.toLowerCase()))
         return new ForbiddenException();
 
       const message = this.web3.utils.sha3(
@@ -49,7 +69,5 @@ export class AppService {
       this.logger.error(err.message, err.stack, AppService.name);
       return new InternalServerErrorException();
     }
-
-    return '';
   }
 }

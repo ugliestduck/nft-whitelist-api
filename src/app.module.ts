@@ -22,11 +22,10 @@ import configuration from './configuration';
     WinstonModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const logConfig = configService.get('logging');
         return {
           defaultMeta: { context: 'Main' },
-          silent: !logConfig.enabled,
-          level: logConfig.level,
+          silent: false,
+          level: 'info',
           transports: [
             new winston.transports.Console({
               format: winston.format.combine(
