@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import {
@@ -20,8 +20,8 @@ import configuration from './configuration';
       isGlobal: true,
     }),
     WinstonModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
+      imports: [],
+      useFactory: async () => {
         return {
           defaultMeta: { context: 'Main' },
           silent: false,
@@ -45,7 +45,7 @@ import configuration from './configuration';
           ],
         };
       },
-      inject: [ConfigService],
+      inject: [],
     }),
     ThrottlerModule.forRoot({
       ttl: 10,
