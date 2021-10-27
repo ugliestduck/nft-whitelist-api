@@ -47,18 +47,8 @@ import configuration from './configuration';
       },
       inject: [],
     }),
-    ThrottlerModule.forRoot({
-      ttl: 10,
-      limit: 10,
-    }),
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
-  ],
+  providers: [AppService],
 })
 export class AppModule {}
