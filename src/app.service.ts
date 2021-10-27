@@ -23,8 +23,8 @@ export class AppService {
     private logger: Logger,
   ) {
     this.web3 = new Web3();
-    this.contractAddress = this.configService.get('contractAddress');
     this.privateKey = this.configService.get('pk');
+    this.web3.eth.accounts.wallet.add(this.privateKey);
   }
 
   async onModuleInit() {
@@ -41,6 +41,7 @@ export class AppService {
 
   async getWhitelist(): Promise<any | InternalServerErrorException> {
     return {
+      signer: this.web3.eth.accounts.wallet[0].address,
       count: this.whitelist.length,
       list: this.whitelist.map(
         (addr) => addr.substr(0, 6) + '...' + addr.substring(38),
@@ -52,19 +53,19 @@ export class AppService {
     payload: any,
   ): Promise<any | InternalServerErrorException | ForbiddenException> {
     try {
-      const { address } = payload;
+      const { address, contractAddress } = payload;
 
       if (!this.whitelist.includes(address.toLowerCase()))
         return new ForbiddenException();
 
       const message = this.web3.utils.sha3(
-        this.web3.utils.toHex(this.contractAddress + address.substr(2)),
+        this.web3.utils.toHex(contractAddress + address.substr(2)),
       );
       const { signature } = this.web3.eth.accounts.sign(
         message,
         this.privateKey,
       );
-      return { signature };
+      return { signature, signer: this.web3.eth.accounts.wallet[0].address };
     } catch (err) {
       this.logger.error(err.message, err.stack, AppService.name);
       return new InternalServerErrorException();
